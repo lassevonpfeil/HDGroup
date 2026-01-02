@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.image.ImageView?>
+<!--<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:org.lassevonpfeil.hdgroup.controller="fxml.MainView"
+            prefHeight="400.0" prefWidth="600.0">
+
+</AnchorPane>-->
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.lassevonpfeil.hdgroup.controller.MainController">
+
+<top>
+    <HBox spacing="20"
+          alignment="CENTER_LEFT"
+          style="-fx-padding: 8;">
+
+        <Label fx:id="documentName"
+               text="document_Name"
+               style="-fx-font-weight: bold;"/>
+
+        <Label fx:id="pageLabel"
+               text="Seite 0 / 0"
+               style="-fx-font-weight: bold;" />
+
+        <Pane HBox.hgrow="ALWAYS" />
+
+        <Label fx:id="markerIndicator"
+               text="📌 Dokumentbeginn"
+               style="-fx-text-fill: red; -fx-font-weight: bold;"
+               visible="false" />
+    </HBox>
+</top>
+
+<center>
+    <ScrollPane fx:id="scrollPane"
+                fitToWidth="true"
+                fitToHeight="true"
+                pannable="true">
+
+        <content>
+            <ImageView fx:id="imageView"
+                       preserveRatio="true"
+                       smooth="true" />
+        </content>
+
+    </ScrollPane>
+</center>
+
+<bottom>
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="← Zurück" onAction="#previousPage"/>
+        <Button text="Marker setzen (M)" onAction="#setMarker"/>
+        <Button text="Weiter →" onAction="#nextPage"/>
+        <Button text="Undo (Ctrl+Z)" onAction="#undo"/>
+        <Button text="PDF öffnen" onAction="#openPdf"/>
+        <Button text="Exportieren" onAction="#exportPdfs"/>
+    </HBox>
+</bottom>
+
+</BorderPane>
+
