@@ -10,6 +10,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.lassevonpfeil.hdgroup.command.SetMarkerCommand;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
@@ -52,12 +53,18 @@ public class MainController {
 
 
     public void loadDocument(File file) throws IOException {
-        DocumentLoader loader = new DocumentLoader();
-        session = new DocumentSession();
-        session.setPages(loader.load(file));
+
+        // 🔹 HIER: altes Dokument schließen
+        if (session != null && session.getDocument() != null) {
+            session.getDocument().close();
+        }
+
+        // 🔹 neues Dokument laden
+        session = documentLoader.load(file);
         navigator = new PageNavigator(session.getPages());
         showCurrentPage();
     }
+
 
     private void handleKeyPressed(KeyEvent e) {
 
@@ -104,11 +111,11 @@ public class MainController {
                 event.consume();
             }
         });
-        scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                newScene.setOnKeyPressed(this::handleKeyPressed);
-            }
+        scrollPane.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> {
+            imageView.setFitWidth(newVal.getWidth());
+            imageView.setFitHeight(newVal.getHeight());
         });
+
     }
 
 
@@ -204,29 +211,34 @@ public class MainController {
         documentName.setText(file.getName());
     }
 
-    private void showCurrentPage() {
-        Page page = navigator.current();
-        imageView.setImage(
-                SwingFXUtils.toFXImage(page.getImage(), null)
-        );
-        pageLabel.setText(
-                (navigator.getIndex() + 1) + " / " + navigator.total()
-        );
-        updateMarkerIndicator();
+    private Image renderPage(Page page, float dpi) throws IOException {
 
-        zoomFactor = 1.0;
-        imageView.setScaleX(zoomFactor);
-        imageView.setScaleY(zoomFactor);
-        imageView.setPreserveRatio(true);   // Seitenverhältnis behalten
-        /*imageView.setFitWidth(scrollPane.getViewportBounds().getWidth());
-        imageView.setFitHeight(scrollPane.getViewportBounds().getHeight());*/
-        scrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
-            imageView.setFitWidth(newBounds.getWidth());
-            imageView.setFitHeight(newBounds.getHeight());
-        });
+        PDFRenderer renderer = new PDFRenderer(session.getDocument());
+        BufferedImage img = renderer.renderImageWithDPI(page.getIndex(), dpi);
 
-
+        return SwingFXUtils.toFXImage(img, null);
     }
+
+
+
+
+    private void showCurrentPage() {
+        try {
+            Page page = navigator.current();
+            imageView.setImage(renderPage(page, 150)); // Vorschau
+
+            pageLabel.setText(
+                    (navigator.getIndex() + 1) + " / " + navigator.total()
+            );
+
+            updateMarkerIndicator();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 
     private void updateMarkerIndicator() {
@@ -237,7 +249,10 @@ public class MainController {
 
     private void addPageToPdf(PDDocument doc, Page page) throws IOException {
 
-        BufferedImage img = page.getImage();
+        PDFRenderer renderer = new PDFRenderer(session.getDocument());
+
+        BufferedImage img =
+                renderer.renderImageWithDPI(page.getIndex(), 300); // Export-DPI
 
         PDPage pdfPage = new PDPage();
         doc.addPage(pdfPage);
@@ -257,6 +272,7 @@ public class MainController {
             );
         }
     }
+
 
 
     private void exportMarkedPdfs(File outputDir) throws IOException {
